@@ -1,0 +1,5 @@
+.venv/
+config.py
+*.pdf
+.vscode/
+*.DS_Store
