@@ -1,9 +1,11 @@
 import asyncio
+from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
-from aiogram.types import FSInputFile, InputFile, InlineKeyboardButton
+from aiogram.types import FSInputFile, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import TOKEN, CHANNEL_ID
+from database import clear, get_database, start_data
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -11,7 +13,7 @@ unsubscribed_users = set()
 
 async def periodic_messages():
     global unsubscribed_users
-    file_path = 'images/DSC01779.jpg'
+    file_path = 'RekaBot/images/DSC01779.jpg'
     photo = FSInputFile(path=file_path)
 
     builder = InlineKeyboardBuilder()
@@ -37,21 +39,36 @@ async def cmd_start(message: types.Message):
     unsubscribed_users.add(message.chat.id)
     asyncio.create_task(periodic_messages())
     #картинка
-    file_path = 'images/DSC_1062_3d_logo.jpg'
+    file_path = 'images/DSC01779.jpg'
     photo = FSInputFile(path=file_path)
     #кнопка
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text='🎁 Получить скидку', callback_data='startBot'))
-    await bot.send_photo(
+
+    start_data(id=message.from_user.id, username=message.from_user.username, firstDate=datetime.now())
+
+    await bot.send_photo(photo=photo,
         caption="""Здравствуйте!
 Получите скидку 10% на проживание в 
-наших уютных бунгало и глэмпинге!""", photo=photo, chat_id=message.chat.id, reply_markup=builder.as_markup())
+наших уютных бунгало и глэмпинге!""", chat_id=message.chat.id, reply_markup=builder.as_markup())
+
+@dp.message(Command("users"))
+async def send_database(message: types.Message):
+    get_database()
+    file = FSInputFile(path='copies/backup.sql')
+    await bot.send_message(message.chat.id, 'Копия базы данных 📋')
+    await bot.send_document(message.chat.id, file)
+
+@dp.message(Command("clear"))
+async def clear_database(message: types.Message):
+    clear()
+    await bot.send_message(message.chat.id, 'База данных очищена 🧹')
 
 async def subscribed_handler(chat_id):
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text='🎁 Забронировать со скидкой', callback_data='book', url='https://ok-reka.ru/'))
     builder.add(InlineKeyboardButton(text='📲 Написать менеджеру', callback_data='manager'))
-    photo_path = 'images/DSC01779.jpg'
+    photo_path = 'images/DSC_1062_3d_logo.jpg'
     photo = FSInputFile(path=photo_path)
     await bot.send_photo(chat_id=chat_id, caption="""
 Вы подписаны!
