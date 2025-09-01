@@ -2,10 +2,12 @@ import asyncio
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
-from aiogram.types import FSInputFile, InlineKeyboardButton
+from aiogram.types import FSInputFile, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import TOKEN, CHANNEL_ID
-from database import clear, get_database, start_data
+from database import clear, get_database, start_data, add_number, add_promo_data
+from promo import createPromo
+from logger import logger
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -42,15 +44,15 @@ async def cmd_start(message: types.Message):
     file_path = 'images/DSC01779.jpg'
     photo = FSInputFile(path=file_path)
     #кнопка
-    builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(text='🎁 Получить скидку', callback_data='startBot'))
+    kb = [[KeyboardButton(text='🎁 Получить скидку', request_contact=True)]]
+    keyboard = ReplyKeyboardMarkup(keyboard=kb)
 
     start_data(id=message.from_user.id, username=message.from_user.username, firstDate=datetime.now())
 
     await bot.send_photo(photo=photo,
         caption="""Здравствуйте!
 Получите скидку 10% на проживание в 
-наших уютных бунгало и глэмпинге!""", chat_id=message.chat.id, reply_markup=builder.as_markup())
+наших уютных бунгало и глэмпинге!""", chat_id=message.chat.id, reply_markup=keyboard)
 
 @dp.message(Command("users"))
 async def send_database(message: types.Message):
@@ -64,16 +66,39 @@ async def clear_database(message: types.Message):
     clear()
     await bot.send_message(message.chat.id, 'База данных очищена 🧹')
 
-async def subscribed_handler(chat_id):
+@dp.message(lambda message: message.contact is not None)
+async def handle_contact(message: types.Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
+    phone = message.contact.phone_number[0:] 
+    print(phone)
+
+    try:
+        if chat_member.status in ['member', 'administrator', 'creator']:
+            await subscribed_handler(chat_id=chat_id, user_id=user_id)
+            add_number(phone,message.from_user.id)
+            unsubscribed_users.discard(user_id)
+        else:
+            await not_subscribed_handler(chat_id=chat_id)
+            unsubscribed_users.add(user_id)
+    except Exception as e:
+        logger.critical(e)
+        
+
+async def subscribed_handler(chat_id, user_id):
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text='🎁 Забронировать со скидкой', callback_data='book', url='https://ok-reka.ru/'))
     builder.add(InlineKeyboardButton(text='📲 Написать менеджеру', callback_data='manager'))
     photo_path = 'images/DSC_1062_3d_logo.jpg'
     photo = FSInputFile(path=photo_path)
-    await bot.send_photo(chat_id=chat_id, caption="""
+    promo = createPromo()
+
+    add_promo_data(promo=promo, discount=10, date=datetime.now(), id = user_id)
+    await bot.send_photo(chat_id=chat_id, caption=f"""
 Вы подписаны!
 Ваш промокод на скидку
-SDFKLSDFJ
+{promo}
 Примените его при бронировании
 на сайте ok-reka.ru""", photo=photo, reply_markup=builder.as_markup())
     
@@ -104,22 +129,11 @@ async def handle_callback(callback_query: types.CallbackQuery):
     chat_id = callback_query.message.chat.id
     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
 
-    if data == 'startBot':
-        try:
-            if chat_member.status in ['member', 'administrator', 'creator']:
-                await subscribed_handler(chat_id=chat_id)
-                unsubscribed_users.discard(user_id)
-            else:
-                await not_subscribed_handler(chat_id=chat_id)
-                unsubscribed_users.add(user_id)
-        except:
-            await bot.send_message(chat_id=chat_id, text="Произошла ошибка, попробуйте снова")
-
     if data == 'manager':
         await manager_handler(chat_id=chat_id)
 
     if data == 'checkSubscribe' and chat_member.status in ['member', 'administrator','creator']:
-        await subscribed_handler(chat_id=chat_id)
+        await subscribed_handler(chat_id=chat_id, user_id=user_id)
     else:
         await not_subscribed_handler(chat_id=chat_id)
 

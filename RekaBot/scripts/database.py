@@ -49,15 +49,27 @@ INSERT INTO users ("Telegram ID", "Username", "Дата первого захо�
     except Exception as e:
         logger.critical(f"Ошибка записи данных {e}")
 
-def add_number(number):
+def add_number(number,id):
     try:
         cursor.execute(f"""
-INSERT INTO users ("Телефон") VALUES (%s) 
-""", (number))
+UPDATE users SET "Телефон" = %s WHERE "Telegram ID" = %s 
+""", (number,id))
         conn.commit()
         logger.info("Телефон записан")
     except Exception as e:
         logger.critical(f"Ошибка записи телефона {e}")
-        
+
+def add_promo_data(promo, discount, date, id):
+    try:
+        cursor.execute("""
+UPDATE users SET "Промокод отправленный" = %s,
+                "Размер скидки обещанный" = %s,
+                "Дата отправки промокода" = %s
+WHERE "Telegram ID" = %s
+""", (promo,discount,date,id))
+        conn.commit() 
+    except Exception as e:
+        logger.critical(f"Ошибка записи данных о промокоде {e}")
+         
 if __name__ == '__main__':
     get_database()

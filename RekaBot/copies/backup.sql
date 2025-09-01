@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iL4WX1yQv310NdJJq1flGsTKxzgjOgfGwhiKCUVTxEfRlXseproYSR3FcxhFAnN
+\restrict w6L57LwKBgVaUkevOCHBXwYlY198MXjzTUM6x6ksFv374h23fUiPDI5gTlRVAFl
 
 -- Dumped from database version 17.5 (Postgres.app)
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -31,11 +31,11 @@ CREATE TABLE public.users (
     id integer NOT NULL,
     "Telegram ID" bigint NOT NULL,
     "Username" character varying(33) NOT NULL,
-    "Телефон" character varying(16) NOT NULL,
+    "Телефон" character varying(16),
     "Дата первого захода" timestamp without time zone NOT NULL,
     "UTM-метки" character varying(50),
     "Промокод отправленный" character varying(9),
-    "Дата отправки промокда" date,
+    "Дата отправки промокода" timestamp without time zone,
     "Размер скидки обещанный" character varying(4)
 );
 
@@ -75,7 +75,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (id, "Telegram ID", "Username", "Телефон", "Дата первого захода", "UTM-метки", "Промокод отправленный", "Дата отправки промокда", "Размер скидки обещанный") FROM stdin;
+COPY public.users (id, "Telegram ID", "Username", "Телефон", "Дата первого захода", "UTM-метки", "Промокод отправленный", "Дата отправки промокода", "Размер скидки обещанный") FROM stdin;
 \.
 
 
@@ -83,7 +83,7 @@ COPY public.users (id, "Telegram ID", "Username", "Телефон", "Дата п
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 13, true);
+SELECT pg_catalog.setval('public.users_id_seq', 21, true);
 
 
 --
@@ -130,5 +130,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iL4WX1yQv310NdJJq1flGsTKxzgjOgfGwhiKCUVTxEfRlXseproYSR3FcxhFAnN
+\unrestrict w6L57LwKBgVaUkevOCHBXwYlY198MXjzTUM6x6ksFv374h23fUiPDI5gTlRVAFl
 
