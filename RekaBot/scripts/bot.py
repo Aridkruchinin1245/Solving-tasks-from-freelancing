@@ -2,16 +2,31 @@ import asyncio
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
-from aiogram.types import FSInputFile, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import FSInputFile, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, BotCommand, BotCommandScopeDefault
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
 from config import TOKEN, CHANNEL_ID
-from database import clear, get_database, start_data, add_number, add_promo_data
+from database import clear, get_database, start_data, add_number, add_promo_data, get_admins, add_admin
 from promo import createPromo
 from logger import logger
 
 bot = Bot(token=TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
 unsubscribed_users = set()
+
+class addAdminForm(StatesGroup):
+    waiting_for_username = State()
+
+# async def set_default_commands(bot: Bot):
+#     commands = [
+#         BotCommand(command="start",description="Запуск бота"),
+#         BotCommand(command="users",description="Копия базы данных"),
+#         BotCommand(command="clear",description="Очистка базы данных"),
+#         BotCommand(command="newAdmin",description="Добавить админа"),
+#     ]
+#     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 
 async def periodic_messages():
     global unsubscribed_users
@@ -41,14 +56,17 @@ async def cmd_start(message: types.Message):
     unsubscribed_users.add(message.chat.id)
     asyncio.create_task(periodic_messages())
     #картинка
-    file_path = 'images/DSC01779.jpg'
+    file_path = 'images/DSC_1062_3d_logo.jpg'
     photo = FSInputFile(path=file_path)
     #кнопка
     kb = [[KeyboardButton(text='🎁 Получить скидку', request_contact=True)]]
     keyboard = ReplyKeyboardMarkup(keyboard=kb)
-
-    start_data(id=message.from_user.id, username=message.from_user.username, firstDate=datetime.now())
-
+    # await set_default_commands(bot)
+    try:
+        start_data(id=message.from_user.id, username=message.from_user.username, firstDate=datetime.now())
+    except:
+        pass
+    
     await bot.send_photo(photo=photo,
         caption="""Здравствуйте!
 Получите скидку 10% на проживание в 
@@ -56,15 +74,41 @@ async def cmd_start(message: types.Message):
 
 @dp.message(Command("users"))
 async def send_database(message: types.Message):
-    get_database()
-    file = FSInputFile(path='copies/backup.sql')
-    await bot.send_message(message.chat.id, 'Копия базы данных 📋')
-    await bot.send_document(message.chat.id, file)
+    if message.from_user.username in get_admins():
+        get_database()
+        file = FSInputFile(path='copies/backup.sql')
+        await bot.send_message(message.chat.id, 'Копия базы данных 📋')
+        await bot.send_document(message.chat.id, file)
+    else:
+        await bot.send_message(message.chat.id, 'Команда доступна только админам ❌')
 
 @dp.message(Command("clear"))
 async def clear_database(message: types.Message):
-    clear()
-    await bot.send_message(message.chat.id, 'База данных очищена 🧹')
+    if message.from_user.username in get_admins():
+        clear()
+        await bot.send_message(message.chat.id, 'База данных очищена 🧹')
+    else:
+        await bot.send_message(message.chat.id, 'Команда доступна только админам ❌')
+
+@dp.message(Command("newAdmin"))
+async def new_admin(message: types.Message, state: FSMContext):
+    if message.from_user.username in get_admins():
+        await message.answer("Введите юзернейм админа без @", message.chat.id)
+        await state.set_state(addAdminForm.waiting_for_username)
+        
+@dp.message(addAdminForm.waiting_for_username)
+async def process(message: types.Message, state: FSMContext):
+        try:
+            await state.update_data(waiting_for_username=message.text)
+
+            data = await state.get_data()
+            username = data['waiting_for_username']
+
+            add_admin(username=username)
+            await bot.send_message(text=f'Пользователь {username} успешно добавлен', chat_id=message.chat.id)
+            logger.info('Добавлен админ')
+        except Exception as e:
+            logger.critical(f'Ошибка ввода пользователя {e}')
 
 @dp.message(lambda message: message.contact is not None)
 async def handle_contact(message: types.Message):
@@ -85,7 +129,6 @@ async def handle_contact(message: types.Message):
     except Exception as e:
         logger.critical(e)
         
-
 async def subscribed_handler(chat_id, user_id):
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text='🎁 Забронировать со скидкой', callback_data='book', url='https://ok-reka.ru/'))

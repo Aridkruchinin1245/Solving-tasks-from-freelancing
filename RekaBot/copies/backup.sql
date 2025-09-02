@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict w6L57LwKBgVaUkevOCHBXwYlY198MXjzTUM6x6ksFv374h23fUiPDI5gTlRVAFl
+\restrict DqKahhlWy4Uwkx4a7p3X3PU4pP7D9QlEv07xYM50siHJJTgrp7SJXFlbRIIsUV5
 
 -- Dumped from database version 17.5 (Postgres.app)
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -22,6 +22,17 @@ SET row_security = off;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: admins; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.admins (
+    username character varying(60) NOT NULL
+);
+
+
+ALTER TABLE public.admins OWNER TO postgres;
 
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
@@ -69,6 +80,16 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Data for Name: admins; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.admins (username) FROM stdin;
+Aridkruchinin
+fgfd
+\.
 
 
 --
@@ -130,5 +151,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict w6L57LwKBgVaUkevOCHBXwYlY198MXjzTUM6x6ksFv374h23fUiPDI5gTlRVAFl
+\unrestrict DqKahhlWy4Uwkx4a7p3X3PU4pP7D9QlEv07xYM50siHJJTgrp7SJXFlbRIIsUV5
 
