@@ -14,32 +14,20 @@ from logger import logger
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
-unsubscribed_users = set()
 
 class addAdminForm(StatesGroup):
     waiting_for_username = State()
 
-# async def set_default_commands(bot: Bot):
-#     commands = [
-#         BotCommand(command="start",description="Запуск бота"),
-#         BotCommand(command="users",description="Копия базы данных"),
-#         BotCommand(command="clear",description="Очистка базы данных"),
-#         BotCommand(command="newAdmin",description="Добавить админа"),
-#     ]
-#     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
+async def periodic_messages(chat_id):
+    markup = InlineKeyboardBuilder()
+    markup.add(InlineKeyboardButton(text="📝 Подписаться", callback_data="subscribe", url="https://t.me/ok_reka"),
+    InlineKeyboardButton(text="🔄 Проверить подписку", callback_data="checkSubscribe"))
+    path = "images/DSC_1062_3d_logo.jpg"
+    photo = FSInputFile(path=path)
+    delay = (24*3600)
 
-async def periodic_messages():
-    global unsubscribed_users
-    file_path = 'RekaBot/images/DSC01779.jpg'
-    photo = FSInputFile(path=file_path)
-
-    builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(text='📝 Подписаться', url='https://t.me/ok_reka', callback_data='_'))
-    builder.add(InlineKeyboardButton(text='🔄 Проверить подписку', callback_data='checkSubscribe'))
-
-    await asyncio.sleep(1)
-    for user in unsubscribed_users:
-        await bot.send_photo(chat_id=user, caption="""
+    await asyncio.sleep(delay)
+    await bot.send_photo(caption="""
 База отдыха в Звенигороде – беседки, 
 сауна, природа и река! 
 Мы отложили для вас скидку 10%.
@@ -47,14 +35,12 @@ async def periodic_messages():
 Если да — просто подпишитесь на 
 нашу группу, и скидка ваша!
 Будем Вас ждать
-Хорошего дня! ☀️
-""", photo=photo, reply_markup=builder.as_markup())
+Хорошего дня! ☀
+""", chat_id=chat_id,reply_markup=markup.as_markup(), photo=photo)
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    global unsubscribed_users
-    unsubscribed_users.add(message.chat.id)
-    asyncio.create_task(periodic_messages())
+    asyncio.create_task(periodic_messages(message.chat.id))
     #картинка
     file_path = 'images/DSC_1062_3d_logo.jpg'
     photo = FSInputFile(path=file_path)
@@ -122,10 +108,8 @@ async def handle_contact(message: types.Message):
         if chat_member.status in ['member', 'administrator', 'creator']:
             await subscribed_handler(chat_id=chat_id, user_id=user_id)
             add_number(phone,message.from_user.id)
-            unsubscribed_users.discard(user_id)
         else:
             await not_subscribed_handler(chat_id=chat_id)
-            unsubscribed_users.add(user_id)
     except Exception as e:
         logger.critical(e)
         
@@ -166,7 +150,6 @@ async def manager_handler(chat_id):
 
 @dp.callback_query()
 async def handle_callback(callback_query: types.CallbackQuery):
-    global unsubscribed_users
     data = callback_query.data
     user_id = callback_query.from_user.id
     chat_id = callback_query.message.chat.id

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict DqKahhlWy4Uwkx4a7p3X3PU4pP7D9QlEv07xYM50siHJJTgrp7SJXFlbRIIsUV5
+\restrict Yf8eEG1DM5gIJoTcSIlwMo0u7msb0Wgd1IN6GebFewf0ux2FNcMxAZaFmlt2xYi
 
 -- Dumped from database version 17.5 (Postgres.app)
 -- Dumped by pg_dump version 17.6 (Homebrew)
@@ -89,6 +89,10 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 COPY public.admins (username) FROM stdin;
 Aridkruchinin
 fgfd
+k
+klop
+l
+DELTAIRE
 \.
 
 
@@ -104,7 +108,7 @@ COPY public.users (id, "Telegram ID", "Username", "Телефон", "Дата п
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 21, true);
+SELECT pg_catalog.setval('public.users_id_seq', 33, true);
 
 
 --
@@ -151,5 +155,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DqKahhlWy4Uwkx4a7p3X3PU4pP7D9QlEv07xYM50siHJJTgrp7SJXFlbRIIsUV5
+\unrestrict Yf8eEG1DM5gIJoTcSIlwMo0u7msb0Wgd1IN6GebFewf0ux2FNcMxAZaFmlt2xYi
 
